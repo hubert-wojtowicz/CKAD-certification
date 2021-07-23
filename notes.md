@@ -1,8 +1,10 @@
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/14112621#questions
 # 2021-07-23
-
 ## tricks
 - `kubectl get all [--all-namespaces]`
 - `kubectl [command] [TYPE] [NAME] [--dru-run] -o <json|name|wide|yaml>`
+- `k get ns --no-header | wc -l` - calculate lines of output
+- `kubectl run nginx --image=nginx` - run pod
 
 ---
 | No.| Kubectl apply                                                                                                  | Kubectl create                                                                                                | kubectl replace |
@@ -16,9 +18,9 @@
 - `kubectl create deployment <deployment-name> --image=<image>`
 - `kubectl scale deployment --replicas=3 <deployment-name>`
 
+
 ## k8s objects
 ### Namespaces
-
 
 - defaulte namespace
 - internal use namespaces:
