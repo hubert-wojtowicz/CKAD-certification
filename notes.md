@@ -1,4 +1,62 @@
-continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/14112621#questions
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299418#questions
+
+# 2021-06-27
+# pod
+
+You CANNOT edit specifications of an existing POD other than the below.
+- spec.containers[*].image
+- spec.initContainers[*].image
+- spec.activeDeadlineSeconds
+- spec.tolerations
+
+# docker 
+```
+FROM ubuntu:14.04
+RUN \
+...
+ADD ..
+ADD ..
+ADD ..
+ENV HOME /root
+WORKDIR /root
+CMD["sleep", "2"]
+```
+- then `doceker run ubuntu-sleeper` sleeps 2 units
+- to override it `doceker run ubuntu-sleeper sleep 5` need to repeat sleep comand-this can be avoided with `ENTRYPOINT`
+
+```
+FROM ubuntu:14.04
+RUN \
+...
+ADD ..
+ADD ..
+ADD ..
+ENV HOME /root
+WORKDIR /root
+ENTRYPOINT["sleep"]
+CMD["2"]
+```
+- then `doceker run ubuntu-sleeper` sleeps 2 units
+- then `doceker run ubuntu-sleeper 5` sleeps 5 units
+
+```
+apiVersion: v1
+kind: pod
+metadata:
+  name: ubuntu-sleeper-pod
+spec:
+  spec:
+    containers:
+    - image: ubuntu-sleeper
+      name: ubuntu-sleeper-pod
+      command: ["sleep2.0"] # override entrypoint instruction in docker
+      args: ["10"] # override args instruction in docker
+```
+
+
+# 2021-07-26
+`kubectl expose pod <pod-name> --name `
+
 # 2021-07-23
 ## tricks
 - `kubectl get all [--all-namespaces]`
