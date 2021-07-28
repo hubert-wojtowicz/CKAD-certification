@@ -1,7 +1,225 @@
-continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299418#questions
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12970872#questions
 
-# 2021-06-27
-# pod
+# 2021-07-28
+
+## tricks
+- `grep -B 3 -A 2 foo README.txt` - find foo and display result with 3 before and 2 after lines
+- `grep -C 3 foo README.txt`- find foo and display result with 3 before and after lines
+- `grep -F -e '' -e 'foo' README.txt` - highlight in context of whole file (https://unix.stackexchange.com/a/340417)
+- `kubectl exec -it my-k8s-pod ls /var/run/secret/kubernetes.io/serviceaccount` - run command without entering shell, list all 3 secrects defined by sa
+
+## service account
+- `k create serviceaccount <sa-name>`
+- `k get serviceaccount`
+- `k describe serviceaccount <sa-name>`
+
+- creation of sa automatically generate `token` (Berer token for REST calls to kubernetes-api) that is stored as secret
+- if app is hosted in k8s then do not export token, just mount it as volume
+- there is `defult` serviceaccount (very basic privileges) in every namespace that is mounted to every pod on creation (you can prevent mouting it with adding to declarative version following property `automountServiceAccountToken:false`)
+
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: ubuntu
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu
+    command: ["sleep", 3600]
+  serviceAccount: dashboard-sa # mount additional sa beside defult one
+```
+- if edit deployment it will trigger new rollot of pods
+
+
+## security context
+### docker security
+ - `ps aux` list only processes saw inside namespace - id of processes is different for parent namespace
+ - by default all processes inside docker are run with root user, this behaviour can be overriden with `docker run --user=1000 ubuntu sleep 3600` or with command `docker run ubuntu sleep 3600` and dockerfile :
+ ```
+ FROM ubuntu
+ ...
+ USER 1000
+ ```
+ - to limit root user allowed actions inside docker there are `linux capabilities` implented
+  - to add capabilities `docker run --cap-add MAC_ADMIN ubuntu`
+  - to add all capabilities `docker run --privileged ubuntu`
+### pod security
+#### container settings override pod settings
+#### pod settings example:
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: ubuntu
+spec:
+  securityContext:
+    runAsUser: 1000 # id
+  containers:
+  - name: ubuntu
+    image: ubuntu
+    command: ["sleep", 3600]
+```
+#### container settigs examople
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: ubuntu
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu
+    command: ["sleep", "3600"]
+    securityContext:
+      runAsUser: 1000 # id
+      capabilities: # only suppported on this level
+        add: ["MAC_ADMIN"]
+```
+
+## environment variebles in kubernetes
+
+### pass by docker command i.e.: `docker run -e APP_COLOR=pink simple-webapp-color`
+### pass by pod definition:
+#### with value
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+    - containerPort: 8080
+    env:
+      - name: APP_COLOR
+        value: pink
+```
+#### with config maps:
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+    - containerPort: 8080
+    envFrom:
+      - configMapKeyRef:
+          name: config-map-name
+```
+#### with secret:
+```
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+    - containerPort: 8080
+    envFrom:
+      - secretKeyRef:
+          name: config-map-name
+```
+## config map 
+
+### imperative command
+#### from k-v pair
+```
+kubectl create configmap <config-name> \
+  --from-literals=<key_1>=<value_1>
+  ...
+  --from-literals=<key_n>=<value_n>
+```
+#### from k-v pair from file
+```
+kubectl create configmap <config-name> 
+  --from-file=<path-to-file>
+```
+#### get sec
+### declarative representation
+```
+apiVersion: v1
+type: ConfigMap
+metadata:
+  name: app-config
+data:
+  Key_1: val_1
+  ...
+  Key_n: val_n
+```
+
+## secret
+### imperative command
+##### from k-v pair
+```
+kubectl create secret generic <config-name> \
+  --from-literals=<key_1>=<value_1>
+  ...
+  --from-literals=<key_n>=<value_n>
+```
+
+example: `k create secret generic db-secret --from-literal=DB_Host=sql01 --from-literal=DB_User=root --from-literal=DB_Password=password123`
+#### from k-v pair from file
+```
+kubectl create secret <config-name> 
+  --from-file=<path-to-file>
+```
+#### get secret value
+- `kubectl get secrets`
+- `kubectl describe secrets` - values hidden
+- `kubectl describe secrets app-secret -o yaml` - to see values
+- `echo -m 'paswd' | base64` - create base64 encoded text
+- `echo -m 'cGFzd3JK' | base64 --decode` - decode base64 text
+### declarative representation
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  Key_1: base64_val_1
+  ...
+  Key_n: base64_val_1
+immutable: true
+```
+
+## ways of injecting into pod ConfigMaps and Secrets
+- environment varieble from secret
+```
+envFrom:
+  - (secret|configMap)Ref:
+      name: <name>
+```
+
+- single environment varieble
+```
+env:
+  - name: DB_Passwod
+    valueFrom:
+      (secret|configMap)KeyRef:
+        name: <name>
+        key: <value|base64-value>
+```
+
+- from volume
+```
+volumes:
+- name: <app-volume-name>
+  (secret|configMap):
+    (secret|configMap)Name: <app-(secret|configMap)-name>
+```
+When there is many key they are injected as separate files.
+# 2021-07-27
+## pod
 
 You CANNOT edit specifications of an existing POD other than the below.
 - spec.containers[*].image
@@ -9,7 +227,7 @@ You CANNOT edit specifications of an existing POD other than the below.
 - spec.activeDeadlineSeconds
 - spec.tolerations
 
-# docker 
+## docker 
 ```
 FROM ubuntu:14.04
 RUN \
