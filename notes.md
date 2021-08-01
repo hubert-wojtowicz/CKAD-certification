@@ -1,6 +1,80 @@
-# 2021-07-29
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299440#questions
 
-# NodeAffinity
+# 2021-08-01
+
+# Multi-Container Pods
+## Patterns:
+1. Ambassador - for example app that manages configuration of service connections (like different databases per environment)
+2. Adapter - for example normalization of logs before sending to log aggregation server
+3. Sidecar - logger agent next to application instance
+
+Pod share:
+- network 
+- storage
+- lifecycle
+
+# NodeAffinity - Connects pods to nodes with specified labels.
+`kubectl get nodes node01 --show-labels` - help to identify labels applied to node without reading (filtered) state spec of node
+
+```yml
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+  affinity:
+    nodeAffinity:
+      requireDuringSchedulingIgnoreDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In
+            values:
+            - Large
+            - Medium
+```
+alternative:
+```yml
+...
+          - key: size
+            operator: NotIn
+            values:
+            - small
+```
+
+```yml
+...
+          - key: size
+            operator: Exists
+```
+Node Affinity Types:
+- Available
+  - (required|preferred)DuringSchedulingIgnoreDuringExecution
+- Planned
+  - requiredDuringSchedulingRequiredDuringExecution
+
+# Node selector
+## Pod definition 
+```yml
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+  nodeSelector:
+    size: Large
+```
+`k label node <node-name> <label-key>=<label-value>`
+
+## Limitations
+1. Not possible to use logical operator like `or`, `and`, `not` etc.
+
 
 # Taints and Tolerations 
 - bug and person with anti-mosquito remedy - pod and node
@@ -35,7 +109,8 @@ spec:
     effect: NoExecute
 ```
 
-
+To remove taint place minus at the end:
+`k taint node node1 app=blue:NoExecute-`
 
 ## Resource requirements
 #### Possibilities to set request and limits
@@ -90,7 +165,6 @@ spec:
       cpu: 0.5
     type: Container
 ```
-
 
 # 2021-07-29
 ## vim
@@ -504,10 +578,10 @@ spec:
 - `kubectl delete pods -l app=my-app`
 
 ## kubectl
-`kubectl get replicaset`
-`kubectl delete replicaset <name>`
-`kubectl replace -f replicaset-definition.yml`
-`k scale --replicas=5 rs/new-replica-set`
+- `kubectl get replicaset`
+- `kubectl delete replicaset <name>`
+- `kubectl replace -f replicaset-definition.yml`
+- `k scale --replicas=5 rs/new-replica-set`
 
 ## k8s objects
 ### ReplicationController
@@ -593,8 +667,8 @@ $ cat > pod-def.yaml
   - kube-proxy
 [<img src="https://d33wubrfki0l68.cloudfront.net/2475489eaf20163ec0f54ddc1d92aa8d4c87c96b/e7c81/images/docs/components-of-kubernetes.svg">](https://kubernetes.io/docs/concepts/overview/components/)
 ## awk command:
-- cat /etc/passwd | awk -F ":" '{print $1"\t"$6"\t"$7}'
-- awk -F "/" '/^\// {print $NF}' /etc/shells | uniq
+- `cat /etc/passwd | awk -F ":" '{print $1"\t"$6"\t"$7}'`
+- `awk -F "/" '/^\// {print $NF}' /etc/shells | uniq`
 
 ## kubectl
 - ``kubectl run ngnix --image ngnix``

@@ -18,3 +18,8 @@ alias kex="k explain --recursive"
 vim .vimrc
 set nu ruler expandtab ts=2 sw=2
 source .vimrc
+
+
+export ns=default
+alias k='kubectl -n $ns' # This helps when namespace in question doesn't have a friendly name 
+alias kdr= 'kubectl -n $ns -o yaml --dry-run'.  # run commands in dry run mode and generate yaml.
