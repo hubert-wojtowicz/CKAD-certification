@@ -1,4 +1,135 @@
-continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12970872#questions
+# 2021-07-29
+
+# NodeAffinity
+
+# Taints and Tolerations 
+- bug and person with anti-mosquito remedy - pod and node
+- Pod has (in)tolerations established
+- Node has taints established
+- if we put taint on node, pods without tolerations are not scheduled there 
+- this concept does not help to force the particular pod to land on particular node - rater exclude pods from nodes. For assignment pod to node there is NodeAffinity. 
+- master nodes has taint set by default to protect management software. See: `k describe node kubemaster | grep Taint`
+
+`k taint nodes <node-name> key=value[:NoSchedule|PreferNoSchedule|NoExecute]`
+Taint-effect define what happen if pod does not tolerate taints:
+1. NoSchedule - pod will not be scheduled on the node
+2. PreferNoSchedule - schedule will try not to schedule on the node, but that's not guaranteed
+3. NoExecute - no schedule new pods on the node and evict existing pods if they are intolerant
+
+example:
+`k taint node node1 app=blue:NoExecute` - means all pods with labels app=blue will be scheduled on node1 and other pods that exist there will be evicted.
+equivalent:
+```yml
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+  tolerations:
+  - key: app
+    operator: "Equal"
+    value: blue
+    effect: NoExecute
+```
+
+
+
+## Resource requirements
+#### Possibilities to set request and limits
+1. define request and limits inside container
+2. use LimitRange to set default requests and limits for every Pod within namespace
+3. use RequestQuota to establish namespace collective for all Pods limits and requests
+
+```yml
+apiVersion: v1
+type: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    resources:
+      request:
+        memory: "1Gi" # Gi, Mi, Ki, G, M, K
+        cpu: 1 # min 1m (milicore)
+      limits:
+        memory: "2Gi"
+        cpu: 2
+```
+- no exceeding of cpu possible - cpu limit is throttle
+- exceeding of memory limit terminate pod
+- default limits for container are established by:
+```yml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-limit-range
+spec:
+  limits:
+  - default:
+      memory: 512Mi
+    defaultRequest:
+      memory: 256Mi
+    type: Container
+```
+and
+```yml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-limit-range
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.5
+    type: Container
+```
+
+
+# 2021-07-29
+## vim
+- `<n>h`, `<n>j`, `<n>k`, `<n>l` - left, down, up, right, where `<n>` is repeat number
+- `G` - end of file
+- `g` - beginning of file
+- `<n>{`, `<n>}` - skip blok of code up and down, where `<n>` is repeat number
+- `<n>dd`, `u` - delete and undo delete of line
+- `yy` - copy line to clipboard
+- `p` - paste clipboard
+- `V` - visual mode 
+- `o` (or `O`) - put you in the INSERT mode line below (above)
+- `w`, `b` - go next word up and backward 
+- `W`, `B` - go next whitespace up and backward 
+- `:30` go to line 30
+- `0` - move cursor to beginning of line
+- `^` - move cursor to beginning of line (skipping spaces)
+- `$` - move to end of line
+- `t<c>` - set cursor one character before c in line (`f<c>` on the character)
+- `cw` - change word (forward) that starts on prompt
+- `dw` - delete wort
+- `D` - delete rest of the line
+- `C` - delete rest of the line and go to insert mode 
+- `ct<c>` change line until you will find `<c>` character for example `ct}`. `;` allows to jump to next found occurrence
+- `*` move to next occurrence of prompted word
+- `z` move prompted element to center of screen
+- `a` - set insert mode on next character
+- `A` - set insert mode at the end of the line
+- `<n>x` - delete (forward) `<n>` characters prompt is over
+- `<n>~` - for `<n>` chars (forward) capitalize if lowercase, lowercase if capital
+- `.` - repeat last command for example `3xj.` remove 3 characters go line down and repeat the same operation
+- `<n>r` - replace `<n>` letters
+- `R` - override letters starting from cursor
+- `<n>>`, `<n><` - move block right or left `<n>` times
+
+continue learning vim: https://youtu.be/IiwGbcd8S7I?t=2414
+
+## tricks
+- `kubectl get secret sa-token -o jsonpath='{.data.token}' | base64 --decode` - get decoded Bearer from SA
 
 # 2021-07-28
 
@@ -6,18 +137,18 @@ continue: https://bec.udemy.com/course/certified-kubernetes-application-develope
 - `grep -B 3 -A 2 foo README.txt` - find foo and display result with 3 before and 2 after lines
 - `grep -C 3 foo README.txt`- find foo and display result with 3 before and after lines
 - `grep -F -e '' -e 'foo' README.txt` - highlight in context of whole file (https://unix.stackexchange.com/a/340417)
-- `kubectl exec -it my-k8s-pod ls /var/run/secret/kubernetes.io/serviceaccount` - run command without entering shell, list all 3 secrects defined by sa
+- `kubectl exec -it my-k8s-pod ls /var/run/secret/kubernetes.io/serviceaccount` - run command without entering shell, list all 3 secrets defined by sa
 
 ## service account
 - `k create serviceaccount <sa-name>`
 - `k get serviceaccount`
 - `k describe serviceaccount <sa-name>`
 
-- creation of sa automatically generate `token` (Berer token for REST calls to kubernetes-api) that is stored as secret
+- creation of sa automatically generate `token` (Bearer token for REST calls to kubernetes-api) that is stored as secret
 - if app is hosted in k8s then do not export token, just mount it as volume
-- there is `defult` serviceaccount (very basic privileges) in every namespace that is mounted to every pod on creation (you can prevent mouting it with adding to declarative version following property `automountServiceAccountToken:false`)
+- there is `default` serviceaccount (very basic privileges) in every namespace that is mounted to every pod on creation (you can prevent mouthing it with adding to declarative version following property `automountServiceAccountToken:false`)
 
-```
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -27,7 +158,7 @@ spec:
   - name: ubuntu
     image: ubuntu
     command: ["sleep", 3600]
-  serviceAccount: dashboard-sa # mount additional sa beside defult one
+  serviceAccount: dashboard-sa # mount additional sa beside default one
 ```
 - if edit deployment it will trigger new rollot of pods
 
@@ -35,19 +166,19 @@ spec:
 ## security context
 ### docker security
  - `ps aux` list only processes saw inside namespace - id of processes is different for parent namespace
- - by default all processes inside docker are run with root user, this behaviour can be overriden with `docker run --user=1000 ubuntu sleep 3600` or with command `docker run ubuntu sleep 3600` and dockerfile :
+ - by default all processes inside docker are run with root user, this behavior can be override with `docker run --user=1000 ubuntu sleep 3600` or with command `docker run ubuntu sleep 3600` and dockerfile :
  ```
  FROM ubuntu
  ...
  USER 1000
  ```
- - to limit root user allowed actions inside docker there are `linux capabilities` implented
+ - to limit root user allowed actions inside docker there are `linux capabilities` implemented
   - to add capabilities `docker run --cap-add MAC_ADMIN ubuntu`
   - to add all capabilities `docker run --privileged ubuntu`
 ### pod security
 #### container settings override pod settings
 #### pod settings example:
-```
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -60,8 +191,8 @@ spec:
     image: ubuntu
     command: ["sleep", 3600]
 ```
-#### container settigs examople
-```
+#### container settings example
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -73,16 +204,16 @@ spec:
     command: ["sleep", "3600"]
     securityContext:
       runAsUser: 1000 # id
-      capabilities: # only suppported on this level
+      capabilities: # only supported on this level
         add: ["MAC_ADMIN"]
 ```
 
-## environment variebles in kubernetes
+## environment variables in kubernetes
 
 ### pass by docker command i.e.: `docker run -e APP_COLOR=pink simple-webapp-color`
 ### pass by pod definition:
 #### with value
-```
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -98,7 +229,7 @@ spec:
         value: pink
 ```
 #### with config maps:
-```
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -114,7 +245,7 @@ spec:
           name: config-map-name
 ```
 #### with secret:
-```
+```yml
 apiVersion: v1
 type: Pod
 metadata:
@@ -146,7 +277,7 @@ kubectl create configmap <config-name>
 ```
 #### get sec
 ### declarative representation
-```
+```yml
 apiVersion: v1
 type: ConfigMap
 metadata:
@@ -180,7 +311,7 @@ kubectl create secret <config-name>
 - `echo -m 'paswd' | base64` - create base64 encoded text
 - `echo -m 'cGFzd3JK' | base64 --decode` - decode base64 text
 ### declarative representation
-```
+```yml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -193,15 +324,15 @@ immutable: true
 ```
 
 ## ways of injecting into pod ConfigMaps and Secrets
-- environment varieble from secret
-```
+- environment variable from secret
+```yml
 envFrom:
   - (secret|configMap)Ref:
       name: <name>
 ```
 
-- single environment varieble
-```
+- single environment variable
+```yml
 env:
   - name: DB_Passwod
     valueFrom:
@@ -211,7 +342,7 @@ env:
 ```
 
 - from volume
-```
+```yml
 volumes:
 - name: <app-volume-name>
   (secret|configMap):
@@ -240,7 +371,7 @@ WORKDIR /root
 CMD["sleep", "2"]
 ```
 - then `doceker run ubuntu-sleeper` sleeps 2 units
-- to override it `doceker run ubuntu-sleeper sleep 5` need to repeat sleep comand-this can be avoided with `ENTRYPOINT`
+- to override it `docker run ubuntu-sleeper sleep 5` need to repeat sleep command-this can be avoided with `ENTRYPOINT`
 
 ```
 FROM ubuntu:14.04
@@ -254,10 +385,10 @@ WORKDIR /root
 ENTRYPOINT["sleep"]
 CMD["2"]
 ```
-- then `doceker run ubuntu-sleeper` sleeps 2 units
-- then `doceker run ubuntu-sleeper 5` sleeps 5 units
+- then `docker run ubuntu-sleeper` sleeps 2 units
+- then `docker run ubuntu-sleeper 5` sleeps 5 units
 
-```
+```yml
 apiVersion: v1
 kind: pod
 metadata:
@@ -298,30 +429,30 @@ spec:
 ## k8s objects
 ### Namespaces
 
-- defaulte namespace
+- default namespace
 - internal use namespaces:
   - kube-system - resources for internal use like pods, services, dns etc
-  - kube-public - resources that should be availiable for all users
+  - kube-public - resources that should be available for all users
 - can create custom namespace
 - namespaces can have
   - set of policies who can do what
   - resources limitation storage, RAM, CPU
-  - objects can refere to each other stright by name within same namespace
-  - to target object from different namespace add suffix `<name>.<namespace>.svc.cluster.local` (this is thanks to whewn service is created DNS is added automatically)
+  - objects can refer to each other straight by name within same namespace
+  - to target object from different namespace add suffix `<name>.<namespace>.svc.cluster.local` (this is thanks to when service is created DNS is added automatically)
     - `cluster.local` is default domain of kubernetes cluster
     - `svc` stands for service
 - to create resource in different ns you add this info in command like:
-  - `kubectl create -f pod-def.yml --namespace=<namespacce>`
+  - `kubectl create -f pod-def.yml --namespace=<namespace>`
   - you can use metadata section to provide namespace info - add line `namespace: <namespace-name>` under metadata
 - create namespace:
-  - with declarative apprach
+  - with declarative approach
 
     ```yml
     apiVersion: v1
     kinf: namespace
     metadata:
       name: dev
-    spec: # oprional
+    spec: # optional
       hard:
         pods: "10"
         request.cpu: "4"
@@ -403,7 +534,7 @@ spec:
 
 ```
 ### ReplicaSet - newer approach for replication
-- ReplicaSet - newest object to handle spec behing pod replication. It cam also handle pods that are already created, that's why there is optional `selector` property in definition
+- ReplicaSet - newest object to handle spec behind pod replication. It cam also handle pods that are already created, that's why there is optional `selector` property in definition
 
 ```yml
 apiVersion: apps/v1
@@ -432,6 +563,7 @@ spec:
 ```
 
 # 2021-07-21
+
 ## tricks
 ```
 $ cat > pod-def.yaml 
@@ -449,11 +581,8 @@ $ cat > pod-def.yaml
 - ``kubectl run <name> --image=<image> --dry-run=client -o yaml > pod.yaml``
 
 # 2021-07-20:
-## other
-- access to KodeKloud
-
 ## theory recap
-- contol plane components:
+- control plane components:
   - kube-scheduler - watches for newly created Pods with no assigned node, and selects a node for them to run on
   - kube-apiserver 
   - kube-controller-manager
@@ -468,4 +597,4 @@ $ cat > pod-def.yaml
 - awk -F "/" '/^\// {print $NF}' /etc/shells | uniq
 
 ## kubectl
-- ``kubectk run ngnix --image ngnix``
+- ``kubectl run ngnix --image ngnix``

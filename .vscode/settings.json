@@ -1,0 +1,22 @@
+{
+    "cSpell.words": [
+        "Tolerations",
+        "WORKDIR",
+        "apiserver",
+        "automount",
+        "configmap",
+        "doceker",
+        "entrypoint",
+        "jsonpath",
+        "kube",
+        "kubectl",
+        "kubelet",
+        "kubemaster",
+        "kubernetes",
+        "milicore",
+        "myapp",
+        "ngnix",
+        "replicaset",
+        "serviceaccount"
+    ]
+}
