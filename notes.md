@@ -1,6 +1,139 @@
-continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299444#questions
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299468#questions
 
-# 2021-08-02
+# 2021-08-02 21:42
+
+## cron jobs
+
+
+```yml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata: 
+  name: reporting-cron-job
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    completions: 3
+    parallelism: 3
+    template:
+      spec:
+        containers:
+        - name: math-add
+          image: ubuntu
+          command: ['expr', '3', '+', '2']
+        restartPolicy: Never # by default `allays` so without setting this container never reach state Completed, but recreate every time process end
+```
+
+## jobs
+- `kubectl create job throw-dice-job --image kodekloud/throw-dice --dry-run=client -o yaml`
+- this is one time run process calculating expression
+```yml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: math-pod
+spec:
+  containers:
+  - name: math-add
+    image: ubuntu
+    command: ['expr', '3', '+', '2']
+  restartPolicy: Never # by default `allays` so without setting this container never reach state Completed, but recreate every time process end
+```
+- job is abstraction over such processes that complete one by one in pipeline (chain) 
+
+```yml
+apiVersion: batch/v1
+kind: Job
+metadata: 
+  name: math-add-job
+spec:
+  completions: 3
+  parallelism: 3
+  template:
+    spec:
+      containers:
+      - name: math-add
+        image: ubuntu
+        command: ['expr', '3', '+', '2']
+      restartPolicy: Never # by default `allays` so without setting this container never reach state Completed, but recreate every time process end
+```
+- to se output of job we need to log stdout of pod `kubectl log pod <name>`...
+
+
+## rolling updates & deployment rollback
+- rollout vs versioning:
+  - when first create deployment it triggers rollout
+  - new rollout creates new deployment revision
+  - every change of container version trigger new version
+
+- `kubectl rollout status deployment/myapp-deployment` - see status
+- `kubectl rollout history deployment/myapp-deployment` - see revisions and history of deployment
+
+```yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+  labels:
+    app: myapp
+    type: front-end
+spec:
+  template:
+    metadata:
+      name: myapp-pod
+      labels: 
+        app: myapp
+        type: front-end
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.7.1 # change from 1.7.0 -> 1.7.1 
+  replicas: 3
+  selector:
+    matchLabels:
+      type: front-end
+
+```
+- `kubectl apply -f deployment-def.yaml` - this will take into account change of image version
+- `kubectl set image deployment/myapp-deploy nginx=nginx:1.9.1` - alternative way to change image version
+- upgrade create **new replicaset** under the hood to satisfy process
+- `kubectl rollout undo deployment/myapp-deployment` - rollback deployment
+
+### switches
+- `--record` - safe command used in revision history
+- `--revision=<n>` - refer to revision id 
+
+### Deployment strategies
+1. Recreate - all down, all new
+2. Rolling update - down and up one by one
+
+
+## labels and selectors
+- `kubectl get pods --selector app=App1`
+
+## Monitor and debug applications
+- Kubelet component on node called cAdvisor is responsible for sending data for aggregation
+- Metric Server - in memory cluster wide solution for retrieving recent metrics
+  - to enable in minikube `minikube addons enable metric-server`
+  - to enable independently `git clone https://github.com/kubernetes-sigs/metrics-server.git && kubectl create -f deploy/1.8+/`
+  - to use 
+    - `kubectl top node`
+    - `kubectl top pod`
+- Other solutions:
+  - Prometheus
+  - Elastic Stack
+  - Datadog
+  - dynatrace
+### tricks
+- `kubectl create -f .` - runs against all files in directory
+- `watch "kubectl top node"` - real-life statistics
+
+## Container logging
+- `docker run -d kodekloud/event-simulator` - detached mode
+- `docker logs -f ecf` - attach to stdout
+- `kubectl logs -f <pod-name>` - get pods log from stdout, `-f` gives live experience
+- if there are more containers in pod: `kubectl logs -f <pod-name> <container-name>`
+
 ## Liveness probes
 Used for application is not in locked state.
 
@@ -50,7 +183,7 @@ spec:
       port: 8080
     initialDelaySeconds: 10 
     periodSeconds: 5
-    failureTreshold: 8 # default 3
+    failureThreshold: 8 # default 3
 ```
 There are other types:
 
@@ -309,7 +442,7 @@ spec:
     command: ["sleep", 3600]
   serviceAccount: dashboard-sa # mount additional sa beside default one
 ```
-- if edit deployment it will trigger new rollot of pods
+- if edit deployment it will trigger new rollout of pods
 
 
 ## security context
@@ -598,7 +731,7 @@ spec:
 
     ```yml
     apiVersion: v1
-    kinf: namespace
+    kind: namespace
     metadata:
       name: dev
     spec: # optional

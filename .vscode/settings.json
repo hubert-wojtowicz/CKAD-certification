@@ -1,21 +1,27 @@
 {
     "cSpell.words": [
+        "Datadog",
+        "Passwod",
         "Tolerations",
         "WORKDIR",
         "apiserver",
         "automount",
         "configmap",
         "doceker",
+        "dynatrace",
         "entrypoint",
         "jsonpath",
+        "kodekloud",
         "kube",
         "kubectl",
         "kubelet",
         "kubemaster",
         "kubernetes",
         "milicore",
+        "minikube",
         "myapp",
         "ngnix",
+        "paswd",
         "replicaset",
         "serviceaccount"
     ]
