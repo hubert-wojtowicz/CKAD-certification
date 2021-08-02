@@ -23,3 +23,12 @@ source .vimrc
 export ns=default
 alias k='kubectl -n $ns' # This helps when namespace in question doesn't have a friendly name 
 alias kdr= 'kubectl -n $ns -o yaml --dry-run'.  # run commands in dry run mode and generate yaml.
+
+
+# vim misc
+et - expandtab
+ai - auto indent 
+ts - tab width
+sw - shift width
+set nu ruler et ts=2 sw=2
+:set list 
