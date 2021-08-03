@@ -3,3 +3,4 @@
 - linux file systems
 - k8s generators
 - https://github.com/lucassha/CKAD-resources
+- nginx

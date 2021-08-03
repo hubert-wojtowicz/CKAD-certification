@@ -1,8 +1,10 @@
 {
     "cSpell.words": [
         "Datadog",
+        "Istio",
         "Passwod",
         "Tolerations",
+        "Traefik",
         "WORKDIR",
         "apiserver",
         "automount",

@@ -1,10 +1,193 @@
 continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299468#questions
 
-# 2021-08-02 21:42
+# 2021-08-03
 
+# Ingress 
+## kubectl
+- `kubectl (get|create|describe) ingress`
+## Benefits
+- define one single endpoint for public use at the same time allow scale number of applications served form cluster under one domain
+- allows easily add new services via simple adding new Ingress object
+- centralize TLS cert management
+- all resources to achieve mentioned goals defined with cluster primitives 
+
+
+## Components
+1. Ingress Controller - it is proxy service that configure TLS and monitor routers, exposed via NodePort service to outside world
+2. Ingress Resources - define routes mapping
+    - based on domain name
+    - based on routes override
+
+### Ingress Controller
+1. nginx
+2. HAProxy
+3. Traefik
+4. Istio
+### Ingress Resources
+- override routes
+- remember to deploy service `default-http-backend:80` to handle not matched routes!
+
+```yml
+apiVersioning: extension/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nginx-ingress
+  template:
+    metadata:
+      labels:
+        name: nginx-ingress
+    spec:
+      containers:
+      - name: nginx-ingress-controller
+        image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.21.0
+      args:
+      - /nginx-ingress-controller
+      - --configmap=$(POD_NAMESPACE)/nginx-configuration
+      env:
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      ports:
+      - name: http
+        containerPort: 80
+      - name: https
+        containerPort: 443
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-ingress-serviceaccount
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+  selector:
+    name: nginx-ingress
+---
+## example when no rules - just one backend
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-wear
+spec:
+  backend:
+    wear-service: wear-service
+      servicePort: 80
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-wear
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /wear
+          backend:
+            wear-service: wear-service
+            servicePort: 80 
+      - path: /watch
+          backend:
+            wear-service: watch-service
+            servicePort: 80 
+--- # option
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-wear
+spec:
+  rules:
+  - host: wear.my-online0store.com
+    http:
+      paths:
+      - backend:
+          wear-service: wear-service
+          servicePort: 80
+  - host: watch.my-online0store.com
+    http:
+      paths:
+      - backend:
+          wear-service: watch-service
+          servicePort: 80 
+```
+
+
+# Services
+- service has cluster io of the service
+
+## ports
+1. TargetPort - port on pod (target from service perspective)
+2. Port - on the service
+3. NodePort - node public port to access service from outside. High port only 30000-32767
+
+## types
+1. NodePort
+2. ClusterIp
+3. LoadBalancer
+
+### NodePort 
+```yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: NodePort
+  ports:
+  - targetPort: 80
+    port: 80
+    nodePort: 30008
+  selector:
+    app: myapp
+    type: front-end
+```
+- if selector selects more than one pod - it will use random algorithm to balance load
+- service spans all nodes to select pods and allocate port on all nodes!
+### ClusterIp 
+```yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end-service
+spec:
+  type: ClusterIp
+  ports:
+  - targetPort: 80
+    port: 80
+  selector:
+    app: myapp
+    type: back-end
+```
+
+# 2021-08-02
 ## cron jobs
-
-
 ```yml
 apiVersion: batch/v1beta1
 kind: CronJob
