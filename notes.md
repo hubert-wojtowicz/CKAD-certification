@@ -1,6 +1,220 @@
-continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/12299468#questions
+continue: https://bec.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/17478616#questions
+# 2021-08-11
+## StatefulSet
+- similar to deployment
+- preserve order of creation
+- name of pods are numbered starting from 0
+- you do not need to specify host or sub domain
+- by default StatefulSet share sam pvc with replicas
+- you can create automatically pvc for each replicas when using `volumeClaimTemplate` property in StatefulSet definition
+
+```yml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - image: mysql
+        name: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-h # this allows to assign all pods to subdomain based on headless service
+  podManagementPolicy: parallel # this allows to create all pods at once but it is not default behavior
+```
+
+## headless Service
+- created like a normal service
+- no load balancing
+- use pod name and subdomain to create DNS entry, thus allows to reach pod :) 
+
+example DNS: `<stateful-set-name>.<headless-svc-name>.default.svc.local`
+example for mysql cluster:
+`mysql-0.mysql-h.default.svc.local`
+`mysql-1.mysql-h.default.svc.local`
+`mysql-2.mysql-h.default.svc.local`
+
+```yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-h
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None ## this distinguish headless service
+```
+
+
+# 2021-08-10
+## Storage classes
+## Volumes
+
+```yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: random-numbers-generator
+spec:
+  containers:
+  - image: alpine
+    name: alpine
+    command: ["/bin/sh","-c"]
+    args: ["shuf -i 0-100 -n 1 >> /opt/number.out;"]
+    volumeMounts: 
+    - mountPath: /opt
+      name: data-volume
+  volumes:
+  - name: data-volume
+    hostPath:
+      path: /data     # path on node
+      type: Directory
+```
+Kubernetes support storage:
+1. NFS 
+2. GlusterFS
+3. Flocker
+4. ceph
+5. scaleio
+6. aws
+7. azure disk
+8. google persistance disk
+
+Example:
+```yml
+  volumes:
+  - name: data-volume
+    awsElasticBlockStore:
+      volumeId: <volume-id>
+      fsType: ext4
+```
+
+## Persistent Volumes (PVX)
+Pool of storage volume that can be allocated wit Persistent Volume Claim (PVC).
+```yml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: myvolume
+spec: 
+  accessModes:
+    - ReadWriteOnce # | ReadOnlyMany | ReadWriteMany
+  capacity: 
+    storage: 1Gi
+  awsElasticBlockStore:
+    volumeId: <volume-id>
+    fsType: ext4
+```
+### Access modes:
+- RWO - ReadWriteOnce
+- ROX - ReadOnlyMany
+- RWX - ReadWriteMany
+- RWOP - ReadWriteOncePod
+
+## Persistent Volume Claim (PVC)
+
+```yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim
+spec: 
+  accessModes:
+    - ReadWriteOnce # | ReadOnlyMany | ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  resources:
+    requests:
+      storage: 500Mi
+```
+
+## Using PVC in volume
+```yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: mypd
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: myclaim
+```
+
+# 2021-08-09
+
+All Allow - rule for cluster VN that pod can reach any pod within cluster (with IP, pod names, svc)
+
+## NetworkPolicy
+1. Ingress traffic
+2. Egress traffic
+
+```yml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector:
+    matchLabel:
+      role: db
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          name: api-pod
+      namespaceSelector:  # if I will add this line prefixed with "-" at the same level as podSelector then we will get "or" operator.
+        matchLabels:      # if this will not be added we will have access from all namespaces
+          name: prod      #
+    - ipBlock:
+        cdir: 192.168.5.10/32
+    ports:
+    - protocol: TCP
+      port: 3306
+  egress:
+  - to:
+    - ipBlock:
+        cdir: 192.167.5.10/32
+    ports:
+    - protocol: TCP
+      port: 80
+
+```
+
+
+Solution supporting NetworkPolicies:
+- Kube-router
+- Calico
+- Romana
+- Weave-net
+Not supporting NetworkPolicies (object can be created, but will not generate an effect):
+- Flannel
 
 # 2021-08-03
+`kubectl expose deployment ingress-controller --name ingress --port 80 --target-port 80 --type NodePort`
+
+# 2021-08-03
+
+Ingress path matching!!!!
 
 # Ingress 
 ## kubectl
@@ -835,7 +1049,7 @@ ENV HOME /root
 WORKDIR /root
 CMD["sleep", "2"]
 ```
-- then `doceker run ubuntu-sleeper` sleeps 2 units
+- then `docker run ubuntu-sleeper` sleeps 2 units
 - to override it `docker run ubuntu-sleeper sleep 5` need to repeat sleep command-this can be avoided with `ENTRYPOINT`
 
 ```

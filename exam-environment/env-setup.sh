@@ -11,8 +11,8 @@ export do="--dry-run=client -o yaml"
 export now="--grace-period=0 --force"
 
 # aliases
-alias current-ns="k config view --minify | grep namespace"
-alias change-ns="k config set-context --current --namespace" # that was really useful! I didn't use -n switch.
+alias cns="k config view --minify | grep namespace"
+alias chns="k config set-context --current --namespace" # that was really useful! I didn't use -n switch.
 alias kex="k explain --recursive"
 # vim setup
 vim .vimrc

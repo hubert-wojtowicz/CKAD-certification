@@ -3,4 +3,6 @@
 - linux file systems
 - k8s generators
 - https://github.com/lucassha/CKAD-resources
-- nginx
+- nginx 
+    - https://kubernetes.github.io/ingress-nginx/deploy/
+    - https://kubernetes.github.io/ingress-nginx/examples/
