@@ -1,17 +1,15 @@
 {
     "cSpell.words": [
-        "Datadog",
-        "Istio",
-        "Passwod",
-        "Tolerations",
-        "Traefik",
-        "WORKDIR",
+        "APIGROUP",
+        "SHORTNAMES",
         "apiserver",
         "automount",
         "configmap",
+        "datadog",
         "doceker",
         "dynatrace",
         "entrypoint",
+        "istio",
         "jsonpath",
         "kodekloud",
         "kube",
@@ -23,8 +21,13 @@
         "minikube",
         "myapp",
         "ngnix",
+        "passwod",
         "paswd",
         "replicaset",
-        "serviceaccount"
+        "romana",
+        "serviceaccount",
+        "tolerations",
+        "traefik",
+        "workdir"
     ]
 }
