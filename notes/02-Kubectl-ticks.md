@@ -1,6 +1,7 @@
 # tricks (from most useful to less one)
 
 ## mostly used
+- `kubectl exec kube -- echo $PWD` - display env variable
 - `kubectl get pods --selector app=App1`
 - `kubectl exec --stdin --tty shell-demo -- /bin/bash` - exec into pod
 - `kubectl exec -it my-k8s-pod ls /var/run/secret/kubernetes.io/serviceaccount` - run command without entering shell, list all 3 secrets defined by sa
@@ -30,3 +31,15 @@ $ cat > pod-def.yaml
 ```
 - `grep -F -e '' -e 'foo' README.txt` - highlight in context of whole file (https://unix.stackexchange.com/a/340417)
 
+- ```for j in `seq 2 6`; do echo "this is line $j"; done;```
+- ```while [ 1 -le 2 ]; do echo "test"; sleep 1; done```
+- ```for j in `seq 1 3`; do if (($j == 2)); then echo "two!"; else echo $j; fi; sleep 2; done```
+- ```x=1; while (( $x < 10 )); do echo $x; x=$(($x+1)); done```
+
+
+# debugging 
+`nc -z -v -w 1 secure-service 80` - check pod connectivity
+`sudo netstat -ltup` - check ports occupied with running applications
+`my-svc.my-namespace.svc.cluster-domain.example` - full DNS for netcat 
+`kubectl exec time-check -- sh -c 'echo $TIME_FREQ'` - particular env varieble
+`k exec time-check -- env` - all env variebles
