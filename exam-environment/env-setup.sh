@@ -8,7 +8,7 @@ complete -F __start_kubectl k
 
 # env variables
 export do="--dry-run=client -o yaml"
-export now="--grace-period=0 --force"
+export now="--grace-period=0 --force":
 
 # example of use evn vars above
 # k run podex --image=busybox $do
