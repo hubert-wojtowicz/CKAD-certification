@@ -30,7 +30,7 @@
 - `.` - repeat last command for example `3xj.` remove 3 characters go line down and repeat the same operation
 - `<n>r` - replace `<n>` letters
 - `R` - override letters starting from cursor
-- `<n>>`, `<n><` - move block right or left `<n>` times
+- `<n>>`, `<n><` - move block right or left `<n>` times (indentation) in visual mode
 
 continue learning vim: https://youtu.be/IiwGbcd8S7I?t=2414
 

@@ -2,6 +2,7 @@
 
 ## mostly used
 - `kubectl exec kube -- echo $PWD` - display env variable
+- `kubectl run busybox --image=busybox --rm -it --restart=Never -- wget -O- 10.1.1.131:80` - run HTTP 
 - `kubectl get pods --selector app=App1`
 - `kubectl exec --stdin --tty shell-demo -- /bin/bash` - exec into pod
 - `kubectl exec -it my-k8s-pod ls /var/run/secret/kubernetes.io/serviceaccount` - run command without entering shell, list all 3 secrets defined by sa
